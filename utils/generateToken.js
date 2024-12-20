@@ -7,7 +7,7 @@ const generateAccessToken = (user) => {
       _id: user._id,
     },
     "averysecretnewtoken",
-    { expires: "2s" }
+    { expiresIn: "1h" }
   );
 };
 
@@ -18,7 +18,7 @@ const generateRefreshToken = (user) => {
       _id: user._id,
     },
     "averysecretrefreshtoken",
-    { expires: "2s" }
+    { expiresIn: "1h" }
   );
 };
 

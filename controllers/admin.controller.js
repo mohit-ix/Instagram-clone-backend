@@ -16,10 +16,8 @@ const getUploadPost = async (req, res, next) => {
 };
 
 const postUploadPost = async (req, res, next) => {
-  console.log("here");
   const imageUrl = req.body.imageUrl;
   const caption = req.body.caption;
-  console.log(imageUrl);
   // const post = new Post({
   //   imageUrl: imageUrl,
   //   caption: caption,
@@ -86,10 +84,39 @@ const postAddFriend = async (req, res, next) => {
     });
 };
 
+const getFriends = async (req, res, next) => {
+  try {
+    const username = req.params.username;
+    const userfriends = await User.findOne({ username: username });
+    if (!userfriends) {
+      throw new Error("user does not exist");
+    }
+    const friends = await Promise.all(
+      userfriends.friends.map((friend) => {
+        return User.findById(friend, {
+          username: true,
+          profilePicture: true,
+        });
+      })
+    );
+    res.status(200).send({
+      status: "success",
+      message: "user info",
+      friends: friends,
+    });
+  } catch (e) {
+    res.status(500).send({
+      status: "failure",
+      message: e.message,
+    });
+  }
+};
+
 
 module.exports = {
   getUploadPost,
   postUploadPost,
   getProfile,
-  postAddFriend
+  postAddFriend,
+  getFriends
 }

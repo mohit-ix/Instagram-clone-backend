@@ -16,4 +16,6 @@ router.get("/userpage", authController.verify, adminController.getProfile);
 
 router.post("/add-friend/:userId", authController.verify, adminController.postAddFriend);
 
+router.get("/friends/:username", adminController.getFriends)
+
 module.exports = router;

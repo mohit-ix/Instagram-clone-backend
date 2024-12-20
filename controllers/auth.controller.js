@@ -35,8 +35,9 @@ const postLogIn = async (req, res, next) => {
       if(doMatch) {
         // req.session.isLoggedIn = true;
         // req.session.user = user;
-        const accessToken = generateToken.generateAccessToken;
-        const refreshToken = generateToken.generateRefreshToken;
+        const accessToken = generateToken.generateAccessToken(user);
+        const refreshToken = generateToken.generateRefreshToken(user);
+        console.log(accessToken, refreshToken);
         User.findByIdAndUpdate(user._id, {
           jwtToken: refreshToken
         });
@@ -168,7 +169,54 @@ const verify = async (req, res, next) => {
       message: err.message
     })
   }
-}
+};
+
+const refresh = async (req, res, next) => {
+  const refreshToken = req.body.token;
+  if (!refreshToken) {
+    res.status(401).send({
+      status: "failure",
+      message: "You are not authenticated!",
+    });
+  }
+  try {
+    const token = await User.findOne(
+      { jwtToken: refreshToken },
+      { jwtToken: true }
+    );
+    if (!token) {
+      res.status(200).send({
+        status: "failure",
+        message: "Refresh token is not valid!",
+      });
+    }
+    jwt.verify(
+      refreshToken,
+      "averysecretrefreshtoken",
+      async (err, user) => {
+        if (err) {
+          console.log(err)
+          throw new Error("token is not valid!");
+        }
+        const newAccessToken = generateToken.generateAccessToken(user);
+        const newRefreshToken = generateToken.generateRefreshToken(user);
+        await User.updateOne(
+          { jwtToken: refreshToken },
+          { $set: { jwtToken: newRefreshToken } }
+        );
+        res.status(200).json({
+          accessToken: newAccessToken,
+          refreshToken: newRefreshToken,
+        });
+      }
+    );
+  } catch (e) {
+    res.status(500).send({
+      status: "failure",
+      message: e.message,
+    });
+  }
+};
 
 module.exports = {
   getLogIn,
@@ -176,5 +224,6 @@ module.exports = {
   postLogIn,
   postSignUp,
   postLogOut,
-  verify
+  verify,
+  refresh
 }

@@ -6,10 +6,11 @@ const getHomepage = async (req, res, next) => {
     const userId = req.user._id;
     const page = parseInt(req.query.page) - 1 || 0;
     const limit = parseInt(req.query.limit) || 1;
+    console.log(page, limit, req.query.page, req.query.limit);
     const user = await User.findById(userId).select("friends");
     const myPosts = await Post.find({user: userId})
-      .skip(page * limit)
-      .limit(limit)
+      // .skip(page * limit)
+      // .limit(limit)
       .sort({createdAt: "desc"})
       .populate("user", "username profilePicture");
     const friendsArticles = await Promise.all(
@@ -20,8 +21,8 @@ const getHomepage = async (req, res, next) => {
             $gte: new Date(new Date().getTime() - 86400000).toISOString(),
           }
         })
-          .skip(page*limit)
-          .limit(limit)
+          // .skip(page*limit)
+          // .limit(limit)
           .sort({createdAt: "desc"})
           .populate("user", "username profilePicture");
       })
