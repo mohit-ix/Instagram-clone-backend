@@ -1,5 +1,4 @@
 const mongoose = require('mongoose');
-const { post } = require('../routes/home');
 
 const Schema = mongoose.Schema;
 

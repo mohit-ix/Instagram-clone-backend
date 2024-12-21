@@ -1,88 +1,7 @@
+const bcrypt = require("bcrypt");
+
 const Post = require("../models/posts.model");
-const User = require('../models/user.model');
-
-// let posts = [];
-
-// const post = new Post({
-//   imageUrl: "https://imgs.search.brave.com/tL4Wty8Rg_sRD5QFKMvMzHgGzROIiYUnJsS5jPLaOsI/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly93YWxs/cGFwZXJzLmNvbS9p/bWFnZXMvZmVhdHVy/ZWQvZGJ6LXBpY3R1/cmVzLWs1aGh6N2Rn/dTEzNjJzMnYuanBn",
-//   caption: "This is a post caption.",
-// });
-
-// posts.push(post);
-
-const getUploadPost = async (req, res, next) => {
-  // console.log(req.user);
-  res.render("admin/upload_post", { pageTitle: "Upload Post" });
-};
-
-const postUploadPost = async (req, res, next) => {
-  const imageUrl = req.body.imageUrl;
-  const caption = req.body.caption;
-  // const post = new Post({
-  //   imageUrl: imageUrl,
-  //   caption: caption,
-  //   user: {
-  //     username: req.user.username,
-  //     userId: req.user,
-  //   },
-  //   likes: {userId: []},
-  //   dislikes: {userId: []},
-  //   timestamp: Date.now(),
-  // });
-  req.body.user = req.user._id;
-  const post = new Post(req.body);
-  post.save()
-  // .then(post => {
-  //   return req.user.addPosts(post);
-  // })
-  .then(result => {
-    console.log('Created Successfully!!');
-    return res.status(200).send({
-      status: "success",
-      message: "Post added Successfully."
-    });
-  })
-  .catch(err => {
-    console.log(err);
-    return res.status(500).send({
-      status: "failure",
-      message: err.message
-    });
-  });
-};
-
-const getProfile = async (req, res, next) => {
-  Post.find({"user.userId": req.user._id})
-  .then(posts => {
-    res.render('admin/user_page', {pageTitle: "Profile", user: req.user, posts: posts});
-  })
-  .catch(err => {
-    console.log(err);
-  })
-};
-
-const postAddFriend = async (req, res, next) => {
-  const userId = req.params.userId;
-  console.log("toogling friend...");
-  // req.session.user.addAndRemoveFriend(userId);
-  User.findById(userId)
-    .then((user) => {
-      return user.addAndRemoveFriend(req.session.user._id);
-    })
-    .then((result) => {
-      return res.status(200).send({
-        status: "success",
-        message: "Friend Added Successfully"
-      });
-    })
-    .catch((err) => {
-      console.log(err);
-      return res.status(500).send({
-        status: "failure",
-        message: err.message
-      })
-    });
-};
+const User = require("../models/user.model");
 
 const getFriends = async (req, res, next) => {
   try {
@@ -112,11 +31,191 @@ const getFriends = async (req, res, next) => {
   }
 };
 
+const getUserByUsername = async (req, res, next) => {
+  try {
+    const username = req.params.username;
+    const user = await User.findOne({ username: username });
+    if (!user) {
+      throw new Error("User does not exist");
+    }
+    const { password, jwtToken, __v, ...otherInfo } = user._doc;
+    return res.status(200).send({
+      status: "success",
+      message: "user info",
+      user: otherInfo,
+    });
+  } catch (err) {
+    console.log(err);
+    return res.status(500).send({
+      status: "failure",
+      message: err.message,
+    });
+  }
+};
+
+const getUser = async (req, res, next) => {
+  try {
+    const id = req.params.id;
+    const user = await User.findOne({ _id: id });
+    if (!user) {
+      throw new Error("User does not exist");
+    }
+    const { password, jwtToken, __v, ...otherInfo } = user._doc;
+    return res.status(200).send({
+      status: "success",
+      message: "user info",
+      user: otherInfo,
+    });
+  } catch (err) {
+    console.log(err);
+    return res.status(500).send({
+      status: "failure",
+      message: err.message,
+    });
+  }
+};
+
+const updateUser = async (req, res, next) => {
+  if (req.body._id == req.params.id) {
+    if (req.body.password) {
+      try {
+        const salt = await bcrypt.genSalt(10);
+        req.body.password = await bcrypt.hash(req.body.password, salt);
+      } catch (err) {
+        res.status(500).send({
+          status: "failure",
+          message: err.message,
+        });
+      }
+    }
+  }
+  try {
+    const user = await User.findOneAndUpdate(
+      { _id: req.params.id },
+      { $set: req.body },
+      { new: true }
+    );
+    if (!user) {
+      return res.status(400).send({
+        status: "failure",
+        message: "Thiis user can't be updated",
+      });
+    }
+    const { jwtToken, password, ...otherInfo } = user._doc;
+    return res.status(200).send({
+      status: "success",
+      user: otherInfo,
+      message: "User Updated",
+    });
+  } catch (err) {
+    res.status(500).send({
+      status: "failure",
+      message: err.message,
+    });
+  }
+};
+
+const addFriend = async (req, res, next) => {
+  try {
+    const currentUser = await User.findById({ _id: req.user._id });
+    if (currentUser.username !== req.params.username) {
+      const userToAdd = await User.findOne({ username: req.params.username });
+      if (!userToAdd) {
+        throw new Error("User does not exist");
+      }
+      if (!currentUser.friends.includes(userToAdd._id)) {
+        await currentUser.updateOne({
+          $push: { friends: userToAdd._id },
+        });
+        await userToAdd.updateOne({
+          $push: { friends: currentUser._id },
+        });
+        res.status(200).send({
+          status: "success",
+          message: "A new friend is added.",
+        });
+      } else {
+        res.status(400).send({
+          status: "failure",
+          message: "You are already friend with this user.",
+        });
+      }
+    } else {
+      throw new Error("Can't add yourself.");
+    }
+  } catch (err) {
+    res.status(500).send({
+      status: "failure",
+      message: err.message,
+    });
+  }
+};
+
+const removeFriend = async (req, res, next) => {
+  try {
+    const currentUser = await User.findById({ _id: req.user._id });
+    if (currentUser.username !== req.params.username) {
+      const userToRemove = await User.findOne({
+        username: req.params.username,
+      });
+      if (!userToRemove) {
+        throw new Error("This user does not exist");
+      }
+      if (currentUser.friends.includes(userToRemove._id)) {
+        await currentUser.updateOne({
+          $pull: { friends: userToRemove._id },
+        });
+        await userToRemove.updateOne({
+          $pull: { friends: currentUser._id },
+        });
+        res.status(200).send({
+          status: "success",
+          message: "A friend is lost.",
+        });
+      } else {
+        res.status(400).send({
+          status: "failure",
+          message: "This user is not a friend.",
+        });
+      }
+    } else {
+      throw new Error("Can't remove yourself");
+    }
+  } catch (err) {
+    res.status(500).send({
+      status: "failure",
+      message: err.message,
+    });
+  }
+};
+
+const getSearchUser = async (req, res, next) => {
+  try {
+    const search = req.query.search || "";
+    const users = await User.find({ username: {$regex: search, $options: "i"} }).select(
+      "_id username profilePicture"
+    );
+    const totalUsers = users.length;
+    res.status(200).send({
+      status: "success",
+      users: users,
+      length: totalUsers,
+    })
+  } catch(err) {
+    console.log(err)
+    res.status(500).send({
+      status: "failure",
+      message: err.message
+    });
+  }
+};
 
 module.exports = {
-  getUploadPost,
-  postUploadPost,
-  getProfile,
-  postAddFriend,
-  getFriends
-}
+  getFriends,
+  getUserByUsername,
+  getUser,
+  updateUser,
+  addFriend,
+  removeFriend,
+  getSearchUser,
+};

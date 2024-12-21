@@ -4,18 +4,21 @@ const express = require('express');
 
 const adminController = require('../controllers/admin.controller');
 const authController = require('../controllers/auth.controller');
-const isAuth = require('../middleware/is-auth');
 
 const router = express.Router();
 
-router.get("/upload-post", authController.verify, adminController.getUploadPost);
+router.get("/friends/:username", adminController.getFriends);
 
-router.post("/upload-post", authController.verify, adminController.postUploadPost);
+router.get("/u/:username", adminController.getUserByUsername);
 
-router.get("/userpage", authController.verify, adminController.getProfile);
+router.get('/searchUser', adminController.getSearchUser);
 
-router.post("/add-friend/:userId", authController.verify, adminController.postAddFriend);
+router.get("/:id", adminController.getUser);
 
-router.get("/friends/:username", adminController.getFriends)
+router.put("/:id", authController.verify, adminController.updateUser);
+
+router.put("/:username/add", authController.verify, adminController.addFriend);
+
+router.put("/:username/remove", authController.verify, adminController.removeFriend);
 
 module.exports = router;

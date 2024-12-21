@@ -8,7 +8,7 @@ const MongoDBStore = require("connect-mongodb-session")(session);
 const multer = require("multer");
 const cors = require('cors');
 
-const homeRouter = require("./routes/home");
+const postRouter = require("./routes/post");
 const adminRouter = require("./routes/admin");
 const authRouter = require("./routes/auth");
 const errorController = require("./controllers/error.controller");
@@ -107,7 +107,7 @@ app.use((req, res, next) => {
 
 app.use("/auth", authRouter);
 app.use("/admin", adminRouter);
-app.use(homeRouter);
+app.use(postRouter);
 
 app.use(errorController.getError404);
 

@@ -5,18 +5,6 @@ const generateToken = require('../utils/generateToken')
 
 const User = require('../models/user.model');
 
-const getLogIn = async (req, res, next) => {
-  res.render('auth/login', {
-    pageTitle: "LogIn"
-  });
-};
-
-const getSignUp = async (req, res, next) => {
-  res.render('auth/signup', {
-    pageTitle: "SignUp"
-  });
-};
-
 const postLogIn = async (req, res, next) => {
   const email = req.body.email;
   const password = req.body.password;
@@ -37,7 +25,6 @@ const postLogIn = async (req, res, next) => {
         // req.session.user = user;
         const accessToken = generateToken.generateAccessToken(user);
         const refreshToken = generateToken.generateRefreshToken(user);
-        console.log(accessToken, refreshToken);
         User.findByIdAndUpdate(user._id, {
           jwtToken: refreshToken
         });
@@ -50,12 +37,6 @@ const postLogIn = async (req, res, next) => {
           refreshToken
         });
       }
-      
-      // return req.session.save(err => {
-      //   console.log(err);
-      //   res.redirect('/')
-      // });
-      // res.redirect('/');
     })
     .catch(err => {
       console.log(err);
@@ -139,12 +120,6 @@ const postLogOut = async (req, res, next) => {
       message: err.message,
     })
   }
-  // req.session.destroy(() => {
-  //   res.status(200).send({
-  //     status: "success",
-  //     message: "Log Out Successful."
-  //   })
-  // });
 }
 
 const verify = async (req, res, next) => {
@@ -219,8 +194,6 @@ const refresh = async (req, res, next) => {
 };
 
 module.exports = {
-  getLogIn,
-  getSignUp,
   postLogIn,
   postSignUp,
   postLogOut,
