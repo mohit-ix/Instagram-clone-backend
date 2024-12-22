@@ -1,18 +1,17 @@
 const bcrypt = require("bcrypt");
 
-const Post = require("../models/posts.model");
-const User = require("../models/user.model");
+const userServices = require("../services/user.services");
 
 const getFriends = async (req, res, next) => {
   try {
     const username = req.params.username;
-    const userfriends = await User.findOne({ username: username });
+    const userfriends = await userServices.getUserByUsername(username);
     if (!userfriends) {
       throw new Error("user does not exist");
     }
     const friends = await Promise.all(
       userfriends.friends.map((friend) => {
-        return User.findById(friend, {
+        return userServices.getUserById(friend, {
           username: true,
           profilePicture: true,
         });
@@ -34,7 +33,7 @@ const getFriends = async (req, res, next) => {
 const getUserByUsername = async (req, res, next) => {
   try {
     const username = req.params.username;
-    const user = await User.findOne({ username: username });
+    const user = await userServices.getUserByUsername(username);
     if (!user) {
       throw new Error("User does not exist");
     }
@@ -56,7 +55,7 @@ const getUserByUsername = async (req, res, next) => {
 const getUser = async (req, res, next) => {
   try {
     const id = req.params.id;
-    const user = await User.findOne({ _id: id });
+    const user = await userServices.getUserById(id, {});
     if (!user) {
       throw new Error("User does not exist");
     }
@@ -90,11 +89,7 @@ const updateUser = async (req, res, next) => {
     }
   }
   try {
-    const user = await User.findOneAndUpdate(
-      { _id: req.params.id },
-      { $set: req.body },
-      { new: true }
-    );
+    const user = await userServices.updateUser(req.user._id, req.body);
     if (!user) {
       return res.status(400).send({
         status: "failure",
@@ -117,9 +112,10 @@ const updateUser = async (req, res, next) => {
 
 const addFriend = async (req, res, next) => {
   try {
-    const currentUser = await User.findById({ _id: req.user._id });
+    const currentUser = await userServices.getUserById(req.user._id, {});
+    console.log(currentUser);
     if (currentUser.username !== req.params.username) {
-      const userToAdd = await User.findOne({ username: req.params.username });
+      const userToAdd = await userServices.getUserByUsername(req.params.username);
       if (!userToAdd) {
         throw new Error("User does not exist");
       }
@@ -153,11 +149,9 @@ const addFriend = async (req, res, next) => {
 
 const removeFriend = async (req, res, next) => {
   try {
-    const currentUser = await User.findById({ _id: req.user._id });
+    const currentUser = await userServices.getUserById(req.user._id, {});
     if (currentUser.username !== req.params.username) {
-      const userToRemove = await User.findOne({
-        username: req.params.username,
-      });
+      const userToRemove = await userServices.getUserByUsername(req.params.username);
       if (!userToRemove) {
         throw new Error("This user does not exist");
       }
@@ -192,9 +186,7 @@ const removeFriend = async (req, res, next) => {
 const getSearchUser = async (req, res, next) => {
   try {
     const search = req.query.search || "";
-    const users = await User.find({ username: {$regex: search, $options: "i"} }).select(
-      "_id username profilePicture"
-    );
+    const users = await userServices.searchUsers(search);
     const totalUsers = users.length;
     res.status(200).send({
       status: "success",

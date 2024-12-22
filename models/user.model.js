@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const bcrypt = require('bcrypt');
 
 const Schema = mongoose.Schema;
 
@@ -29,86 +30,20 @@ const userSchema = new Schema({
   friends: {
     type: Array,
     default: []
-    // users: [
-    //   {
-    //     userId: {
-    //       type: Schema.Types.ObjectId,
-    //       ref: 'User',
-    //       required: true,
-    //     }
-    //   }
-    // ]
   },
   jwtToken: {
     type: String,
   }
-  // uploads: {
-  //   posts: [
-  //     {
-  //       postId: {
-  //         type: Schema.Types.ObjectId,
-  //         ref: 'Post',
-  //         required: true,
-  //       },
-  //       imageUrl: {
-  //         type: String,
-  //         required: true,
-  //       },
-  //       likeCount: {
-  //         type: Number,
-  //         required: true,
-  //       },
-  //       dislikeCount: {
-  //         type: Number,
-  //         required: true
-  //       }
-  //     }
-  //   ]
-  // },
 });
 
-userSchema.methods.addPosts = function(post) {
-  this.uploads.posts.push({
-    postId: post._id,
-    imageUrl: post.imageUrl,
-    likeCount: post.likes.users.length,
-    dislikeCount: post.dislikes.users.length,
-  });
+// userSchema.statics.isEmailTaken = async (email) => {
+//   const user = await .findOne({email: email});
+//   return !!user;
+// }
 
-  return this.save();
-};
-
-userSchema.methods.addAndRemoveFriend = function(userId) {
-  let updatedFriends = [...this.friends.users];
-  
-  const isFriend = updatedFriends.find(user => {
-    return user.userId.toString() === userId.toString();
-  });
-
-  console.log(isFriend);
-
-  if(isFriend) {
-    updatedFriends = updatedFriends.filter(user => {
-      return user !== isFriend;
-    });
-  }
-  else {
-    console.log("adding friend");
-    updatedFriends.push({
-      userId: userId,
-    });
-  }
-
-  const updatedFriendsList = {
-    users: updatedFriends
-  }
-
-  this.friends = updatedFriendsList;
-
-  console.log(this);
-  console.log("saving");
-
-  return this.save();
+userSchema.methods.isPasswordMatch = async function(password) {
+  const user = this;
+  return bcrypt.compare(password, user.password);
 }
 
 module.exports = mongoose.model('User', userSchema);

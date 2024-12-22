@@ -1,7 +1,6 @@
 node_modules/*
 data/*
 public/*
-services/*
 views/*
 *.png
 *.tif

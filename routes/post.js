@@ -17,9 +17,9 @@ router.put("/:id", authController.verify, postController.updatePost);
 
 router.delete("/:id", authController.verify, postController.deletePost);
 
-router.post('/:id/like', authController.verify, postController.postLikePost);
+router.get('/:id/like', authController.verify, postController.likePost);
 
-router.post('/:id/dislike', authController.verify, postController.postDislikePost);
+router.get('/:id/dislike', authController.verify, postController.dislikePost);
 
 router.get("/u/:username", postController.getPostsByUsername)
 

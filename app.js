@@ -11,6 +11,7 @@ const cors = require('cors');
 const postRouter = require("./routes/post");
 const adminRouter = require("./routes/admin");
 const authRouter = require("./routes/auth");
+const commentRouter = require("./routes/comment");
 const errorController = require("./controllers/error.controller");
 
 const User = require("./models/user.model");
@@ -107,6 +108,7 @@ app.use((req, res, next) => {
 
 app.use("/auth", authRouter);
 app.use("/admin", adminRouter);
+app.use("/comment", commentRouter);
 app.use(postRouter);
 
 app.use(errorController.getError404);
